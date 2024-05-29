@@ -3,7 +3,9 @@ package com.klug.application.rest.controller;
 import com.klug.application.rest.dto.ProductDTO;
 import com.klug.domain.models.DomainProduct;
 import com.klug.domain.services.ProductService;
+import com.klug.domain.services.impl.ProductServiceImpl;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -15,7 +17,7 @@ import java.util.stream.Collectors;
 public class ProductController {
 
     @Autowired
-    private ProductService productService;
+    private ProductServiceImpl productService;
 
     @PostMapping
     public ResponseEntity<ProductDTO> createProduct(@RequestBody ProductDTO productDTO) {
@@ -27,7 +29,8 @@ public class ProductController {
         DomainProduct createdProduct = productService.createProduct(product);
 
         ProductDTO responseDTO = new ProductDTO(createdProduct);
-        return ResponseEntity.ok(responseDTO);
+//        return ResponseEntity.ok(responseDTO);
+        return new ResponseEntity<>(responseDTO, HttpStatus.CREATED);
     }
 
     @GetMapping("/{id}")
@@ -53,7 +56,8 @@ public class ProductController {
                     existingProduct.setDescription(productDTO.getDescription());
                     existingProduct.setPrice(productDTO.getPrice());
                     DomainProduct updatedProduct = productService.updateProduct(existingProduct);
-                    return ResponseEntity.ok(new ProductDTO(updatedProduct));
+//                    return ResponseEntity.ok(new ProductDTO(updatedProduct));
+                    return new ResponseEntity<>(new ProductDTO(updatedProduct), HttpStatus.CREATED);
                 })
                 .orElse(ResponseEntity.notFound().build());
     }
