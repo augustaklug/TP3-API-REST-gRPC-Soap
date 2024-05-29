@@ -6,7 +6,7 @@ import com.klug.application.grpc.ProductId;
 import com.klug.application.grpc.ProductList;
 import com.klug.application.grpc.ProductServiceGrpc;
 import com.klug.domain.models.DomainProduct;
-import com.klug.domain.services.impl.ProductServiceImpl;
+import com.klug.domain.services.ProductService;
 import io.grpc.stub.StreamObserver;
 import net.devh.boot.grpc.server.service.GrpcService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,7 +18,7 @@ import java.util.Optional;
 public class ProductGrpcService extends ProductServiceGrpc.ProductServiceImplBase {
 
     @Autowired
-    private ProductServiceImpl productService;
+    private ProductService productService;
 
     @Override
     public void createProduct(Product request, StreamObserver<Product> responseObserver) {

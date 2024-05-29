@@ -1,5 +1,6 @@
 package com.klug;
 
+import com.klug.application.grpc.service.OrderGrpcService;
 import com.klug.application.grpc.service.ProductGrpcService;
 import io.grpc.Grpc;
 import io.grpc.Server;
@@ -35,6 +36,7 @@ public class Tp3ApiGRpcSoapApplication {
         Server server = NettyServerBuilder.forPort(9091)
                 .sslContext(sslContext)
                 .addService(new ProductGrpcService())
+                .addService(new OrderGrpcService())
                 .addService(ProtoReflectionService.newInstance())
                 .build()
                 .start();

@@ -1,0 +1,33 @@
+syntax = "proto3";
+
+option java_multiple_files = true;
+option java_package = "com.klug.application.grpc";
+option java_outer_classname = "OrderProto";
+
+package order;
+
+import "common.proto";
+
+message Order {
+    int64 id = 1;
+    string orderDate = 2;  // string representation of date-time
+    string customerName = 3;
+    double totalAmount = 4;
+    int64 productId = 5;  // Referência ao produto
+}
+
+message OrderId {
+    int64 id = 1;
+}
+
+message OrderList {
+    repeated Order orders = 1;
+}
+
+service OrderService {
+    rpc CreateOrder(Order) returns (Order);
+    rpc GetOrderById(OrderId) returns (Order);
+    rpc GetAllOrders(common.Empty) returns (OrderList);
+    rpc UpdateOrder(Order) returns (Order);
+    rpc DeleteOrder(OrderId) returns (common.Empty);
+}

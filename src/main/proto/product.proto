@@ -6,6 +6,8 @@ option java_outer_classname = "ProductProto";
 
 package product;
 
+import "common.proto";
+
 message Product {
     int64 id = 1;
     string name = 2;
@@ -24,9 +26,7 @@ message ProductList {
 service ProductService {
     rpc CreateProduct(Product) returns (Product);
     rpc GetProductById(ProductId) returns (Product);
-    rpc GetAllProducts(Empty) returns (ProductList);
+    rpc GetAllProducts(common.Empty) returns (ProductList);
     rpc UpdateProduct(Product) returns (Product);
-    rpc DeleteProduct(ProductId) returns (Empty);
+    rpc DeleteProduct(ProductId) returns (common.Empty);
 }
-
-message Empty {}
