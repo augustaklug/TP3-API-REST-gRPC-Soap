@@ -1,10 +1,6 @@
 package com.klug.application.grpc.service;
 
-import com.klug.application.grpc.Empty;
-import com.klug.application.grpc.Product;
-import com.klug.application.grpc.ProductId;
-import com.klug.application.grpc.ProductList;
-import com.klug.application.grpc.ProductServiceGrpc;
+import com.klug.application.grpc.*;
 import com.klug.domain.models.DomainProduct;
 import com.klug.domain.services.ProductService;
 import io.grpc.stub.StreamObserver;
