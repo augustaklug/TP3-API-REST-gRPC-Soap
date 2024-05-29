@@ -22,24 +22,36 @@ src
 │   │       └── klug
 │   │           ├── application
 │   │           │   ├── grpc
-│   │           │   │   └── service
-│   │           │   │       └── ProductGrpcService.java
+│   │           │   │   ├── ProductGrpcService.java
+│   │           │   │   └── OrderGrpcService.java
 │   │           │   ├── rest
 │   │           │   │   ├── controller
-│   │           │   │   │   └── ProductController.java
+│   │           │   │   │   ├── ProductController.java
+│   │           │   │   │   └── OrderController.java
 │   │           │   │   └── dto
-│   │           │   │       └── ProductDTO.java
+│   │           │   │       ├── ProductDTO.java
+│   │           │   │       └── OrderDTO.java
+│   │           │   ├── service
+│   │           │   │   └── ProductIntegrationService.java
 │   │           ├── domain
 │   │           │   ├── models
-│   │           │   │   └── DomainProduct.java
+│   │           │   │   ├── DomainProduct.java
+│   │           │   │   └── DomainOrder.java
 │   │           │   ├── repositories
-│   │           │   │   └── ProductRepository.java
-│   │           │   └── services
-│   │           │       ├── ProductService.java
-│   │           │       └── impl
-│   │           │           └── ProductServiceImpl.java
+│   │           │   │   ├── ProductRepository.java
+│   │           │   │   └── OrderRepository.java
+│   │           │   ├── services
+│   │           │   │   ├── ProductService.java
+│   │           │   │   ├── OrderService.java
+│   │           │   │   └── impl
+│   │           │   │       ├── ProductServiceImpl.java
+│   │           │   │       └── OrderServiceImpl.java
+│   │           └── config
+│   │               └── AppConfig.java
 │   ├── proto
-│   │   └── product.proto
+│   │   ├── common.proto
+│   │   ├── product.proto
+│   │   └── order.proto
 │   └── resources
 │       └── application.properties
 └── test
@@ -53,9 +65,34 @@ src
                             └── TestConfig.java
 ```
 
+## Domínio e Context Mapping
+
+### Domain-Driven Design (DDD)
+Este projeto segue os princípios do Domain-Driven Design (DDD) para organizar e modular o código de acordo com diferentes contextos de negócios. Cada contexto delimitado (Bounded Context) encapsula sua lógica de negócio específica, garantindo que o domínio permaneça coerente e fácil de manter.
+
+### Context Mapping
+No projeto, temos dois contextos principais:
+
+* **1. Contexto de Produtos:** Gerencia produtos, suas características e operações CRUD.
+* **2. Contexto de Pedidos:** Gerencia pedidos, incluindo data do pedido, nome do cliente, total do pedido e referência ao produto.
+  
+Para facilitar a comunicação entre esses contextos, utilizamos o padrão de serviço de aplicação. Por exemplo, o OrderService se comunica com o ProductService para obter informações sobre um produto ao criar ou atualizar um pedido.
+
+### Princípios SOLID
+
+O projeto adota os princípios SOLID para garantir um código mais limpo, modular e fácil de manter:
+
+* **1. Single Responsibility Principle (SRP):** Cada classe tem uma única responsabilidade. Por exemplo, OrderService é responsável apenas pela lógica de negócios dos pedidos.
+* **2. Open/Closed Principle (OCP):** As classes estão abertas para extensão, mas fechadas para modificação. Novas funcionalidades podem ser adicionadas estendendo as classes existentes.
+* **3. Liskov Substitution Principle (LSP):** As subclasses podem ser usadas no lugar das classes base sem quebrar a aplicação. Implementações de interfaces, como ProductService e OrderService, seguem este princípio.
+* **4. Interface Segregation Principle (ISP):** As interfaces são segregadas conforme necessário. Temos interfaces distintas para repositórios (ProductRepository, OrderRepository) e serviços (ProductService, OrderService).
+* **5. Dependency Inversion Principle (DIP):** As classes de alto nível não dependem de classes de baixo nível, mas de abstrações. Os serviços dependem de interfaces de repositório em vez de implementações concretas.
+
 ## Endpoints REST
 
-### Criar um Produto
+### Produtos
+
+#### Criar um Produto
 * URL: ```/api/products```
 * Método: ```POST```
 * Corpo da Requisição:
@@ -76,7 +113,7 @@ src
 }
 ```
 
-### Buscar Produto por ID
+#### Buscar Produto por ID
 * URL: ```/api/products/{id}```
 * Método: ```GET```
 * Resposta:
@@ -89,7 +126,7 @@ src
 }
 ```
 
-### Atualizar Produto
+#### Atualizar Produto
 * URL: ```/api/products/{id}```
 * Método: ```PUT```
 * Corpo da Requisição:
@@ -110,11 +147,11 @@ src
 }
 ```
 
-### Deletar Produto
+#### Deletar Produto
 * URL: ```/api/products/{id}```
 * Método: ```DELETE```
 
-### Listar Todos os Produtos
+#### Listar Todos os Produtos
 * URL: ```/api/products```
 * Método: ```GET```
 * Resposta:
@@ -134,11 +171,113 @@ src
   }
 ]
 ```
+### Pedidos
+
+#### Criar um Pedido
+* URL: ```/api/orders```
+* Método: ```POST```
+* Corpo da Requisição:
+```json
+{
+  "orderDate": "2024-05-29T15:30:00",
+  "customerName": "John Doe",
+  "totalAmount": 199.99,
+  "productId": 1
+}
+```
+* Resposta:
+```json
+{
+  "id": 1,
+  "orderDate": "2024-05-29T15:30:00",
+  "customerName": "John Doe",
+  "totalAmount": 199.99,
+  "productId": 1
+}
+```
+
+#### Buscar Pedido por ID
+* URL: ```/api/orders/{id}```
+* Método: ```GET```
+* Resposta:
+```json
+{
+  "id": 1,
+  "orderDate": "2024-05-29T15:30:00",
+  "customerName": "John Doe",
+  "totalAmount": 199.99,
+  "productId": 1
+}
+```
+
+#### Atualizar Pedido
+* URL: ```/api/orders/{id}```
+* Método: ```PUT```
+* Corpo da Requisição:
+```json
+{
+  "orderDate": "2024-06-01T12:00:00",
+  "customerName": "Jane Doe",
+  "totalAmount": 299.99,
+  "productId": 2
+}
+```
+* Resposta:
+```json
+{
+  "id": 1,
+  "orderDate": "2024-06-01T12:00:00",
+  "customerName": "Jane Doe",
+  "totalAmount": 299.99,
+  "productId": 2
+}
+```
+
+#### Deletar Pedido
+* URL: ```/api/orders/{id}```
+* Método: ```DELETE```
+
+#### Listar Todos os Pedidos
+* URL: ```/api/orders```
+* Método: ```GET```
+* Resposta:
+```json
+[
+  {
+    "id": 1,
+    "orderDate": "2024-05-29T15:30:00",
+    "customerName": "John Doe",
+    "totalAmount": 199.99,
+    "productId": 1
+  },
+  {
+    "id": 2,
+    "orderDate": "2024-06-01T12:00:00",
+    "customerName": "Jane Doe",
+    "totalAmount": 299.99,
+    "productId": 2
+  }
+]
+```
 
 ## Serviços gRPC
 
-### Proto File
-O arquivo ```product.proto``` define os serviços e mensagens gRPC:
+### Definições proto
+```common.proto```
+
+```proto
+syntax = "proto3";
+
+option java_multiple_files = true;
+option java_package = "com.klug.application.grpc";
+option java_outer_classname = "CommonProto";
+
+package common;
+
+message Empty {}
+```
+
+```product.proto```
 
 ```proto
 syntax = "proto3";
@@ -148,6 +287,8 @@ option java_package = "com.klug.application.grpc";
 option java_outer_classname = "ProductProto";
 
 package product;
+
+import "common.proto";
 
 message Product {
     int64 id = 1;
@@ -167,15 +308,49 @@ message ProductList {
 service ProductService {
     rpc CreateProduct(Product) returns (Product);
     rpc GetProductById(ProductId) returns (Product);
-    rpc GetAllProducts(Empty) returns (ProductList);
+    rpc GetAllProducts(common.Empty) returns (ProductList);
     rpc UpdateProduct(Product) returns (Product);
-    rpc DeleteProduct(ProductId) returns (Empty);
+    rpc DeleteProduct(ProductId) returns (common.Empty);
 }
-
-message Empty {}
 ```
 
+```order.proto```
 
+```proto
+syntax = "proto3";
+
+option java_multiple_files = true;
+option java_package = "com.klug.application.grpc";
+option java_outer_classname = "OrderProto";
+
+package order;
+
+import "common.proto";
+
+message Order {
+    int64 id = 1;
+    string orderDate = 2;  // assuming orderDate is a string representation of date-time
+    string customerName = 3;
+    double totalAmount = 4;
+    int64 productId = 5;  // Referência ao produto
+}
+
+message OrderId {
+    int64 id = 1;
+}
+
+message OrderList {
+    repeated Order orders = 1;
+}
+
+service OrderService {
+    rpc CreateOrder(Order) returns (Order);
+    rpc GetOrderById(OrderId) returns (Order);
+    rpc GetAllOrders(common.Empty) returns (OrderList);
+    rpc UpdateOrder(Order) returns (Order);
+    rpc DeleteOrder(OrderId) returns (common.Empty);
+}
+```
 
 ## Exemplos de Context Type
 
@@ -271,12 +446,7 @@ public class OrderService {
 
 ```
 
-## Princípios SOLID
-* 1. Single Responsibility Principle (SRP): Cada classe tem uma única responsabilidade. Exemplo: ProductServiceImpl é responsável pela lógica de negócios do produto.
-* 2. Open/Closed Principle (OCP): As classes estão abertas para extensão, mas fechadas para modificação. Exemplo: Podemos adicionar novos métodos a ProductService sem alterar a implementação existente.
-* 3. Liskov Substitution Principle (LSP): As subclasses devem ser substituíveis por suas superclasses. Exemplo: ProductServiceImpl pode ser usada onde ProductService é esperado.
-* 4. Interface Segregation Principle (ISP): Múltiplas interfaces específicas são melhores do que uma interface geral. Exemplo: ProductService é uma interface específica para operações de produtos.
-* 5. Dependency Inversion Principle (DIP): As classes de alto nível não devem depender de classes de baixo nível; ambas devem depender de abstrações.
+
  
  
      
