@@ -355,98 +355,246 @@ service OrderService {
 ## Exemplos de Context Type
 
 ### Partnership
-Em um contexto de Parceria, dois ou mais contextos trabalham juntos e possuem uma relação de colaboração mútua.
+Dois contextos colaboram de maneira próxima e coordenada, compartilhando responsabilidades e sincronizando mudanças. Eles têm uma forte dependência mútua. Por exemplo, os contextos **Shipping** (Envio) e **Billing** (Faturamento), onde ambos dependem um do outro para garantir que as entregas e os pagamentos sejam sincronizados.
 
+**Código para o Contexto Shipping:**
 ```java
-// Contexto A
-public interface PartnerService {
-    void notifyPartner(String message);
+package com.klug.shipping.domain.models;
+
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import lombok.Data;
+import java.time.LocalDateTime;
+
+@Entity
+@Data
+public class Shipment {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+    private Long orderId;
+    private LocalDateTime shippedDate;
+    private String status;
 }
+```
 
-// Contexto B
-public class OrderService {
-    private final PartnerService partnerService;
+**Código para o Contexto Billing:**
+```java
+package com.klug.billing.domain.models;
 
-    public OrderService(PartnerService partnerService) {
-        this.partnerService = partnerService;
-    }
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import lombok.Data;
+import java.time.LocalDateTime;
 
-    public void createOrder(Order order) {
-        // Lógica de criação de pedido
-        partnerService.notifyPartner("New order created");
+@Entity
+@Data
+public class Invoice {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+    private Long orderId;
+    private LocalDateTime billingDate;
+    private double amount;
+    private String status;
+}
+```
+
+**Sincronização entre Shipping e Billing:**
+```java
+package com.klug.shipping.service;
+
+import com.klug.billing.domain.models.Invoice;
+import com.klug.billing.service.BillingService;
+import com.klug.shipping.domain.models.Shipment;
+import com.klug.shipping.repository.ShipmentRepository;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+@Service
+public class ShippingService {
+
+    @Autowired
+    private ShipmentRepository shipmentRepository;
+
+    @Autowired
+    private BillingService billingService;
+
+    public void shipOrder(Long orderId) {
+        // Criação e atualização de um envio
+        Shipment shipment = new Shipment();
+        shipment.setOrderId(orderId);
+        shipment.setShippedDate(LocalDateTime.now());
+        shipment.setStatus("SHIPPED");
+        shipmentRepository.save(shipment);
+
+        // Atualização do faturamento
+        Invoice invoice = billingService.findInvoiceByOrderId(orderId);
+        if (invoice != null) {
+            invoice.setStatus("SHIPPED");
+            billingService.updateInvoice(invoice);
+        }
     }
 }
-
 ```
 
 ### Customer-Supplier
-Em um contexto de Customer-Supplier, um contexto (Customer) utiliza serviços fornecidos por outro contexto (Supplier).
+Um contexto (cliente) usa serviços de outro contexto (fornecedor) para realizar suas tarefas. O fornecedor não depende diretamente do cliente. Por exemplo, um contexto **Order** (Pedido) como cliente e um contexto **Inventory** (Inventário) como fornecedor. O contexto de pedidos verifica o inventário antes de criar um pedido.
 
+**Código para o Contexto Inventory:**
 ```java
-// Contexto Supplier
-public interface InventoryService {
-    void reserveProduct(Long productId, int quantity);
-}
+package com.klug.inventory.domain.models;
 
-// Contexto Customer
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import lombok.Data;
+
+@Entity
+@Data
+public class ProductInventory {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+    private Long productId;
+    private int availableQuantity;
+}
+```
+
+**Serviço de Inventário:**
+```java
+package com.klug.inventory.service;
+
+import com.klug.inventory.domain.models.ProductInventory;
+import com.klug.inventory.repository.InventoryRepository;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+@Service
+public class InventoryService {
+
+    @Autowired
+    private InventoryRepository inventoryRepository;
+
+    public boolean checkAvailability(Long productId, int quantity) {
+        ProductInventory inventory = inventoryRepository.findByProductId(productId);
+        return inventory != null && inventory.getAvailableQuantity() >= quantity;
+    }
+}
+```
+
+**Código para o Contexto Order:**
+```java
+package com.klug.order.service;
+
+import com.klug.inventory.service.InventoryService;
+import com.klug.order.domain.models.Order;
+import com.klug.order.repository.OrderRepository;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+@Service
 public class OrderService {
-    private final InventoryService inventoryService;
 
-    public OrderService(InventoryService inventoryService) {
-        this.inventoryService = inventoryService;
-    }
+    @Autowired
+    private OrderRepository orderRepository;
 
-    public void createOrder(Order order) {
-        // Lógica de criação de pedido
-        inventoryService.reserveProduct(order.getProductId(), order.getQuantity());
+    @Autowired
+    private InventoryService inventoryService;
+
+    public void createOrder(Long productId, int quantity) {
+        if (inventoryService.checkAvailability(productId, quantity)) {
+            Order order = new Order();
+            order.setProductId(productId);
+            order.setQuantity(quantity);
+            order.setStatus("CREATED");
+            orderRepository.save(order);
+        } else {
+            throw new RuntimeException("Product not available in inventory");
+        }
     }
 }
-
 ```
 
 ### Anticorruption Layer
-Em um contexto de Anticorruption Layer, criamos uma camada intermediária para isolar e adaptar a comunicação entre dois contextos que possuem modelos diferentes.
+Um contexto implementa uma camada de tradução/adaptação para interagir com outro contexto ou sistema legado, evitando a "corrupção" do modelo de domínio. Por exemplo, um contexto **Order** (Pedido) que precisa se comunicar com um sistema legado de **Customer** (Cliente). Em vez de interagir diretamente, o contexto de pedidos usa uma camada anticorrupção para traduzir entre os dois sistemas
 
+**Serviço de Sistema Legado de Cliente:**
 ```java
-// Contexto Legacy
-public class LegacyInventoryService {
-    public void legacyReserve(String productCode, int amount) {
-        // Lógica de reserva no sistema legada
+package com.legacy.customer.service;
+
+import org.springframework.stereotype.Service;
+
+@Service
+public class LegacyCustomerService {
+
+    public String getCustomerData(Long customerId) {
+        // Simulação de uma chamada a um sistema legado
+        return "Legacy Customer Data for ID: " + customerId;
     }
 }
-
-// Anticorruption Layer
-public class InventoryServiceAdapter implements InventoryService {
-    private final LegacyInventoryService legacyInventoryService;
-
-    public InventoryServiceAdapter(LegacyInventoryService legacyInventoryService) {
-        this.legacyInventoryService = legacyInventoryService;
-    }
-
-    @Override
-    public void reserveProduct(Long productId, int quantity) {
-        String productCode = "PROD-" + productId; // Adaptação de ID para código
-        legacyInventoryService.legacyReserve(productCode, quantity);
-    }
-}
-
-// Contexto Atual
-public class OrderService {
-    private final InventoryService inventoryService;
-
-    public OrderService(InventoryService inventoryService) {
-        this.inventoryService = inventoryService;
-    }
-
-    public void createOrder(Order order) {
-        // Lógica de criação de pedido
-        inventoryService.reserveProduct(order.getProductId(), order.getQuantity());
-    }
-}
-
 ```
 
+**Camada Anticorrupção:**
+```java
+package com.klug.order.acl;
 
- 
- 
-     
+import com.legacy.customer.service.LegacyCustomerService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+@Service
+public class CustomerAclService {
+
+    @Autowired
+    private LegacyCustomerService legacyCustomerService;
+
+    public String getCustomerInfo(Long customerId) {
+        String legacyData = legacyCustomerService.getCustomerData(customerId);
+        // Traduzir dados legados para o modelo de domínio
+        return translateLegacyData(legacyData);
+    }
+
+    private String translateLegacyData(String legacyData) {
+        // Implementar a lógica de tradução
+        return "Translated: " + legacyData;
+    }
+}
+```
+
+**Serviço de Pedido usando a Camada Anticorrupção:**
+```java
+package com.klug.order.service;
+
+import com.klug.order.acl.CustomerAclService;
+import com.klug.order.domain.models.Order;
+import com.klug.order.repository.OrderRepository;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+@Service
+public class OrderService {
+
+    @Autowired
+    private OrderRepository orderRepository;
+
+    @Autowired
+    private CustomerAclService customerAclService;
+
+    public void createOrder(Long customerId, Long productId, int quantity) {
+        String customerInfo = customerAclService.getCustomerInfo(customerId);
+        Order order = new Order();
+        order.setCustomerId(customerId);
+        order.setProductId(productId);
+        order.setQuantity(quantity);
+        order.setCustomerInfo(customerInfo);
+        order.setStatus("CREATED");
+        orderRepository.save(order);
+    }
+}
+```
