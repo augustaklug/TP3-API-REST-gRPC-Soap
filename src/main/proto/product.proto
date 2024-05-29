@@ -1,0 +1,32 @@
+syntax = "proto3";
+
+option java_multiple_files = true;
+option java_package = "com.klug.application.grpc";
+option java_outer_classname = "ProductProto";
+
+package product;
+
+message Product {
+    int64 id = 1;
+    string name = 2;
+    string description = 3;
+    double price = 4;
+}
+
+message ProductId {
+    int64 id = 1;
+}
+
+message ProductList {
+    repeated Product products = 1;
+}
+
+service ProductService {
+    rpc CreateProduct(Product) returns (Product);
+    rpc GetProductById(ProductId) returns (Product);
+    rpc GetAllProducts(Empty) returns (ProductList);
+    rpc UpdateProduct(Product) returns (Product);
+    rpc DeleteProduct(ProductId) returns (Empty);
+}
+
+message Empty {}
