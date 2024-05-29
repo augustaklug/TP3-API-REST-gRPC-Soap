@@ -54,7 +54,7 @@ public class ProductController {
                     existingProduct.setDescription(productDTO.getDescription());
                     existingProduct.setPrice(productDTO.getPrice());
                     DomainProduct updatedProduct = productService.updateProduct(existingProduct);
-                    return new ResponseEntity<>(new ProductDTO(updatedProduct), HttpStatus.CREATED);
+                    return new ResponseEntity<>(new ProductDTO(updatedProduct), HttpStatus.OK);
                 })
                 .orElse(ResponseEntity.notFound().build());
     }
