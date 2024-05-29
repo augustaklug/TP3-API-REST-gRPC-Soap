@@ -61,8 +61,8 @@ src
                 └── application
                     └── rest
                         └── controller
+                            └── OrderControllerTest.java
                             └── ProductControllerTest.java
-                            └── TestConfig.java
 ```
 
 ## Domínio e Context Mapping
@@ -259,6 +259,10 @@ O projeto adota os princípios SOLID para garantir um código mais limpo, modula
   }
 ]
 ```
+
+### Testes
+
+Os controladores `ProductController` e `OrderController` foram testados utilizando JUnit 5 e Mockito para garantir a integridade e funcionalidade da aplicação. Os testes cobrem operações essenciais como criação, leitura, atualização e exclusão de produtos e pedidos. Através do `MockMvc`, simulamos requisições HTTP e verificamos as respostas esperadas, enquanto o Mockito permite a simulação de dependências dos serviços.
 
 ## Serviços gRPC
 
